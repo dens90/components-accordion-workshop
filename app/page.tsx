@@ -492,14 +492,14 @@ export default function Page() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               {[
-                "/images/gallery-1.jpg",
-                "/images/gallery-2.jpg",
-                "/images/gallery-3.jpg",
-                "/images/gallery-4.jpg",
-                "/images/gallery-5.jpg",
-                "/images/gallery-6.jpg",
-                "/images/gallery-7.jpg",
-                "/images/gallery-8.jpg",
+                `${prefix}/images/gallery-1.jpg`,
+                `${prefix}/images/gallery-2.jpg`,
+                `${prefix}/images/gallery-3.jpg`,
+                `${prefix}/images/gallery-4.jpg`,
+                `${prefix}/images/gallery-5.jpg`,
+                `${prefix}/images/gallery-6.jpg`,
+                `${prefix}/images/gallery-7.jpg`,
+                `${prefix}/images/gallery-8.jpg`,
               ].map((src, idx) => (
                 <div
                   key={src}
