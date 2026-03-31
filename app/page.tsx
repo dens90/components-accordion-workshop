@@ -51,6 +51,9 @@ function ArrowRight({ className = "" }: { className?: string }) {
   );
 }
 
+const isProd = process.env.NODE_ENV === 'production';
+const prefix = isProd ? '/components-accordion-workshop' : '';
+
 function usePrefersReducedMotion() {
   const [prefers, setPrefers] = useState(false);
 
@@ -78,11 +81,11 @@ export default function Page() {
   const prefersReducedMotion = usePrefersReducedMotion();
 
   // Hero slides (maps to the screenshot "1 — 3" image slider).
-  const heroSlides = useMemo(
+  const heroSlides: { src: string, num: string }[] = useMemo(
     () => [
-      { src: "/hero-01.jpg", num: "01" },
-      { src: "/hero-02.jpg", num: "02" },
-      { src: "/hero-03.jpg", num: "03" },
+      { src: `${prefix}/hero-01.jpg`, num: "01" },
+      { src: `${prefix}/hero-02.jpg`, num: "02" },
+      { src: `${prefix}/hero-03.jpg`, num: "03" },
     ],
     []
   );
@@ -236,7 +239,7 @@ export default function Page() {
               className="h-15 w-15 rounded-[2px]"
               aria-hidden="true"
             >
-              <Image src="/logo-sky-carini.png" alt="Sky Carini" width={60} height={60} />
+              <Image src={`${prefix}/logo-sky-carini.png`} alt="Sky Carini" width={60} height={60} />
             </div>
             <div className="text-[11px] font-semibold uppercase tracking-[0.2em]">
               SKY CARINI
@@ -410,17 +413,17 @@ export default function Page() {
             <div className="grid gap-10 md:grid-cols-3">
               {[
                 {
-                  image: "/images/lavorazione-1.jpg",
+                  image: `${prefix}/images/lavorazione-1.jpg`,
                   title: "Guide e alloggi",
                   line: "Precisione su quote e accoppiamenti.",
                 },
                 {
-                  image: "/images/lavorazione-2.jpg",
+                  image: `${prefix}/images/lavorazione-2.jpg`,
                   title: "Meccaniche scorrevoli",
                   line: "Fluidità e risposta costante nel tempo.",
                 },
                 {
-                  image: "/images/lavorazione-3.jpg",
+                  image: `${prefix}/images/lavorazione-3.jpg`,
                   title: "Finiture e decori",
                   line: "Pulizia estetica e coerenza artigianale.",
                 },
@@ -470,7 +473,7 @@ export default function Page() {
               </div>
               <div data-reveal className="relative rounded-sm overflow-hidden border border-white/5 bg-neutral-900">
                 <div className="relative aspect-[4/3]">
-                  <Image src="/images/banco-lavoro.jpg" alt="Banco di lavorazione" fill className="object-cover" />
+                  <Image src={`${prefix}/images/banco-lavoro.jpg`} alt="Banco di lavorazione" fill className="object-cover" />
                 </div>
               </div>
             </div>
