@@ -9,9 +9,9 @@ export function ComponentiSlider() {
   const slides = useMemo(() => getComponentiSlides(), []);
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
-    containScroll: "trimSnaps",
-    dragFree: false,
-    loop: false,
+    containScroll: false,
+    dragFree: true,
+    loop: true,
   });
   const [selected, setSelected] = useState(0);
 
@@ -25,13 +25,22 @@ export function ComponentiSlider() {
     const sync = () => onSelect();
     const id = window.requestAnimationFrame(sync);
     emblaApi.on("select", onSelect);
+    emblaApi.on("settle", onSelect);
     emblaApi.on("reInit", onSelect);
     return () => {
       window.cancelAnimationFrame(id);
       emblaApi.off("select", onSelect);
+      emblaApi.off("settle", onSelect);
       emblaApi.off("reInit", onSelect);
     };
   }, [emblaApi, onSelect]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onResize = () => emblaApi.reInit();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [emblaApi]);
 
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
@@ -47,8 +56,9 @@ export function ComponentiSlider() {
         <div
           className="w-full overflow-hidden pl-3 sm:pl-5 md:pl-6"
           ref={emblaRef}
+          data-lenis-prevent
         >
-          <div className="flex touch-pan-y gap-3 sm:gap-5 md:gap-6 pr-3 sm:pr-5 md:pr-6">
+          <div className="flex touch-manipulation gap-3 sm:gap-5 md:gap-6 pr-3 sm:pr-5 md:pr-6">
             {slides.map((item) => (
               <div
                 key={item.n}

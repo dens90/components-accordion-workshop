@@ -27,3 +27,25 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
+
+/* Scroll reveal: una sola transizione CSS (compatibile con Lenis) */
+[data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, var(--reveal-y, 28px), 0);
+  transition:
+    opacity var(--reveal-duration, 0.8s) cubic-bezier(0.22, 1, 0.36, 1),
+    transform var(--reveal-duration, 0.8s) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-reveal].is-revealed {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
