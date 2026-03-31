@@ -1,3 +1,7 @@
+/**
+ * Dati contenuti lavorazioni (slug, copy, path immagini sotto `public/`).
+ * Per nuove schede: aggiungi voce in `LAVORAZIONI_DATA`; le route statiche usano `getLavorazioneSlugs`.
+ */
 import { assetUrl } from "./asset-prefix";
 
 export type Lavorazione = {

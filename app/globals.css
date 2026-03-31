@@ -28,6 +28,40 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
+/* Tipografia condivisa (home + lavorazioni + header): etichette sezione, lead, bottoni testuali */
+@layer components {
+  .type-section-label {
+    @apply text-[13px] font-medium uppercase tracking-[0.3em] text-[#8f8f8f];
+  }
+  .type-meta-label {
+    @apply text-[13px] uppercase tracking-[0.26em] text-[#8f8f8f];
+  }
+  .type-cta-link {
+    @apply text-[13px] uppercase tracking-[0.22em];
+  }
+  .type-button-label {
+    @apply text-[12px] uppercase tracking-[0.18em];
+  }
+  .type-body-lead {
+    @apply text-[15px] md:text-[1.0625rem] leading-relaxed;
+  }
+  .type-footer-muted {
+    @apply text-[13px] uppercase tracking-[0.26em] text-[#737373];
+  }
+  .type-nav-link {
+    @apply text-[13px] uppercase tracking-[0.26em];
+  }
+  .type-brand-mark {
+    @apply text-[13px] font-semibold uppercase tracking-[0.2em];
+  }
+  .type-brass-caption {
+    @apply text-[13px] uppercase tracking-[0.28em] text-brass/90;
+  }
+  .type-gallery-index {
+    @apply text-[12px] font-medium uppercase tracking-[0.3em] text-brass/90;
+  }
+}
+
 /* Scroll reveal: una sola transizione CSS (compatibile con Lenis) */
 [data-reveal] {
   opacity: 0;

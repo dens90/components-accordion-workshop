@@ -1,3 +1,6 @@
+/**
+ * Route statica `/lavorazioni/[slug]`: params da `getLavorazioneSlugs`, contenuto da `lib/lavorazioni`.
+ */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {

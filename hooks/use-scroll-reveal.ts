@@ -3,9 +3,8 @@
 import { useEffect, type RefObject } from "react";
 
 /**
- * Reveal on scroll via CSS transition (no GSAP): evita conflitti con Lenis e
- * il “lampeggio”/effetto ricaricamento che si ottiene animando opacity con JS
- * durante lo smooth scroll.
+ * Funzionalità: reveal on scroll via CSS (no GSAP) — evita conflitti con Lenis durante smooth scroll.
+ * Selettore: `[data-reveal]`; opzioni `data-reveal-y`, `data-reveal-d` (numeri, fallback se non validi).
  */
 export function useScrollReveal(
   rootRef: RefObject<HTMLElement | null>,
@@ -32,8 +31,10 @@ export function useScrollReveal(
           const el = entry.target as HTMLElement;
           if (el.classList.contains("is-revealed")) return;
 
-          const y = el.dataset.revealY ? Number(el.dataset.revealY) : 28;
-          const d = el.dataset.revealD ? Number(el.dataset.revealD) : 0.8;
+          const yRaw = el.dataset.revealY ? Number(el.dataset.revealY) : 28;
+          const dRaw = el.dataset.revealD ? Number(el.dataset.revealD) : 0.8;
+          const y = Number.isFinite(yRaw) ? yRaw : 28;
+          const d = Number.isFinite(dRaw) ? dRaw : 0.8;
           el.style.setProperty("--reveal-y", `${y}px`);
           el.style.setProperty("--reveal-duration", `${d}s`);
 

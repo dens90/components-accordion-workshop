@@ -1,18 +1,21 @@
 /**
- * Home: hero, componenti (slider), lavorazioni, percorso qualità, galleria, contatto.
+ * Home — sezioni: hero, componenti (slider Embla), lavorazioni, qualità, galleria + lightbox, contatto.
+ * Dati lista: `HERO_SLIDES`, `HOME_LAVORAZIONE_CARDS`, `GALLERY_ITEMS` (prefissi asset da `assetUrl`).
  */
 
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import Image from "next/image";
 import Link from "next/link";
 import { assetUrl } from "@/lib/asset-prefix";
 import { getHomeLavorazioneCards } from "@/lib/lavorazioni";
+import { scrollToAnchorById } from "@/lib/scroll-to-section";
+import { ImageLightbox } from "@/components/image-lightbox";
 import { ComponentiSlider } from "@/components/home/componenti-slider";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 
 function ArrowRight({ className = "" }: { className?: string }) {
   return (
@@ -36,26 +39,7 @@ function ArrowRight({ className = "" }: { className?: string }) {
   );
 }
 
-function usePrefersReducedMotion() {
-  const [prefers, setPrefers] = useState(false);
-
-  useEffect(() => {
-    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setPrefers(mql.matches);
-    update();
-
-    if (typeof mql.addEventListener === "function") {
-      mql.addEventListener("change", update);
-      return () => mql.removeEventListener("change", update);
-    }
-
-    mql.addListener(update);
-    return () => mql.removeListener(update);
-  }, []);
-
-  return prefers;
-}
-
+/** Galleria: path pubblici + classi griglia responsive (immagini risolte con `assetUrl` sotto). */
 const GALLERY_LAYOUT = [
   {
     src: "/images/gallery-1.jpg",
@@ -91,106 +75,55 @@ const GALLERY_LAYOUT = [
   },
 ] as const;
 
+const HERO_SLIDES = [
+  { src: assetUrl("/hero-01.jpg"), num: "01" },
+  { src: assetUrl("/hero-02.jpg"), num: "02" },
+  { src: assetUrl("/hero-03.jpg"), num: "03" },
+] as const;
+
+const HOME_LAVORAZIONE_CARDS = getHomeLavorazioneCards();
+
+const GALLERY_ITEMS = GALLERY_LAYOUT.map((item) => ({
+  src: assetUrl(item.src),
+  cell: item.cell,
+}));
+
+const GALLERY_LIGHTBOX_IMAGES = GALLERY_ITEMS.map((item, idx) => ({
+  src: item.src,
+  alt: `Lavorazione ${idx + 1}`,
+}));
+
 export default function Page() {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
 
-  const heroSlides = useMemo(
-    () => [
-      { src: assetUrl("/hero-01.jpg"), num: "01" },
-      { src: assetUrl("/hero-02.jpg"), num: "02" },
-      { src: assetUrl("/hero-03.jpg"), num: "03" },
-    ],
-    []
-  );
   const [activeHeroSlide, setActiveHeroSlide] = useState(0);
-
-  const lavorazioneCards = useMemo(() => getHomeLavorazioneCards(), []);
-
-  const galleryItems = useMemo(
-    () =>
-      GALLERY_LAYOUT.map((item) => ({
-        src: assetUrl(item.src),
-        cell: item.cell,
-      })),
-    []
-  );
-
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-
-  const closeLightbox = useCallback(() => setLightboxIndex(null), []);
-
-  const navHeight = 72;
 
   useScrollReveal(rootRef, prefersReducedMotion);
 
+  // Hero: rotazione slide (disattivata se motion ridotta o una sola slide).
   useEffect(() => {
     if (prefersReducedMotion) return;
-    if (heroSlides.length <= 1) return;
+    if (HERO_SLIDES.length <= 1) return;
 
     const intervalId = window.setInterval(() => {
-      setActiveHeroSlide((v) => (v + 1) % heroSlides.length);
+      setActiveHeroSlide((v) => (v + 1) % HERO_SLIDES.length);
     }, 5200);
 
     return () => window.clearInterval(intervalId);
-  }, [prefersReducedMotion, heroSlides.length]);
+  }, [prefersReducedMotion]);
 
+  // Deep link `#id`: scroll dopo mount (hash validato in `scrollToAnchorById`).
   useEffect(() => {
     const hash = window.location.hash.slice(1);
     if (!hash) return;
 
-    const run = () => {
-      const el = document.getElementById(hash);
-      if (!el) return;
-      const navEl = document.querySelector("header");
-      const offset = navEl
-        ? navEl.getBoundingClientRect().height + 12
-        : navHeight + 12;
-      const y = el.getBoundingClientRect().top + window.scrollY - offset;
-      if (window.lenis?.scrollTo) {
-        window.lenis.scrollTo(y);
-      } else {
-        window.scrollTo({ top: y, behavior: "smooth" });
-      }
-    };
-
-    const id = window.setTimeout(run, 80);
+    const id = window.setTimeout(() => scrollToAnchorById(hash), 80);
     return () => window.clearTimeout(id);
   }, []);
 
-  useEffect(() => {
-    if (lightboxIndex === null) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeLightbox();
-      if (e.key === "ArrowLeft") {
-        setLightboxIndex((i) =>
-          i === null ? null : (i + galleryItems.length - 1) % galleryItems.length
-        );
-      }
-      if (e.key === "ArrowRight") {
-        setLightboxIndex((i) =>
-          i === null ? null : (i + 1) % galleryItems.length
-        );
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [lightboxIndex, closeLightbox, galleryItems.length]);
-
-  useEffect(() => {
-    if (lightboxIndex === null) return;
-    const html = document.documentElement;
-    const body = document.body;
-    const prevHtml = html.style.overflow;
-    const prevBody = body.style.overflow;
-    html.style.overflow = "hidden";
-    body.style.overflow = "hidden";
-    return () => {
-      html.style.overflow = prevHtml;
-      body.style.overflow = prevBody;
-    };
-  }, [lightboxIndex]);
-
+  // Hero: entrata GSAP (solo se motion completa).
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!rootRef.current) return;
@@ -211,33 +144,13 @@ export default function Page() {
     return () => ctx.revert();
   }, [prefersReducedMotion]);
 
-  const scrollToId = useCallback(
-    (id: string) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-
-      const navEl = document.querySelector("header");
-      const offset = navEl
-        ? navEl.getBoundingClientRect().height + 12
-        : navHeight + 12;
-      const y = el.getBoundingClientRect().top + window.scrollY - offset;
-
-      if (window.lenis?.scrollTo) {
-        window.lenis.scrollTo(y);
-        return;
-      }
-
-      window.scrollTo({ top: y, behavior: "smooth" });
-    },
-    []
-  );
-
   return (
     <div ref={rootRef} className="min-h-full bg-[#050505] text-dirty-white">
       <main>
+        {/* --- Hero --- */}
         <section className="relative min-h-screen bg-[#050505] overflow-hidden">
           <div aria-hidden="true" className="absolute inset-0">
-            {heroSlides.map((s, idx) => (
+            {HERO_SLIDES.map((s, idx) => (
               <div
                 key={s.src}
                 className={`absolute inset-0 transition-opacity duration-900 ease-out ${
@@ -259,13 +172,10 @@ export default function Page() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_28%,rgba(229,200,120,0.16),transparent_58%)]" />
           </div>
 
-          <div className="relative mx-auto max-w-6xl px-6 md:px-8 pt-28 md:pt-32 pb-20 md:pb-24">
+          <div className="relative mx-auto max-w-6xl px-6 md:px-8 pt-36 md:pt-48 pb-20 md:pb-24">
             <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] gap-10 items-start">
               <div className="max-w-2xl">
-                <div
-                  data-hero
-                  className="text-[11px] uppercase tracking-[0.35em] text-[#8f8f8f]"
-                >
+                <div data-hero className="type-section-label">
                   PARTI PER FISARMONICHE • CASTELFIDARDO
                 </div>
 
@@ -282,7 +192,7 @@ export default function Page() {
                   <h1 className="text-3xl md:text-4xl font-light leading-tight text-brass">
                     Parti e accessori per accordion
                   </h1>
-                  <p className="mt-5 text-sm md:text-base leading-relaxed text-[#c7c7c7]">
+                  <p className="type-body-lead mt-5 text-[#c7c7c7]">
                     Azienda artigianale di Castelfidardo specializzata nella produzione
                     di componenti tecnici per fisarmoniche: precisione, tolleranze curate
                     e affidabilità nel tempo.
@@ -294,9 +204,9 @@ export default function Page() {
                     href="#collectie"
                     onClick={(e) => {
                       e.preventDefault();
-                      scrollToId("collectie");
+                      scrollToAnchorById("collectie");
                     }}
-                    className="cursor-pointer text-[11px] uppercase tracking-[0.24em] text-dirty-white hover:text-brass transition-colors"
+                    className="type-cta-link cursor-pointer text-dirty-white hover:text-brass transition-colors"
                   >
                     Scopri i componenti
                   </a>
@@ -310,8 +220,8 @@ export default function Page() {
                   className="absolute right-0 top-1/2 -translate-y-1/2 w-[220px] md:w-[260px]"
                 >
                   <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-px bg-white/15" />
-                  <div className="relative flex items-center justify-between text-[11px] uppercase tracking-[0.28em]">
-                    {heroSlides.map((s, idx) => (
+                  <div className="type-meta-label relative flex items-center justify-between">
+                    {HERO_SLIDES.map((s, idx) => (
                       <button
                         key={s.num}
                         type="button"
@@ -333,6 +243,7 @@ export default function Page() {
           </div>
         </section>
 
+        {/* --- Componenti (slider in componente dedicato) --- */}
         <section
           id="collectie"
           className="overflow-x-clip py-24 md:py-32 bg-zinc-section border-y border-white/5"
@@ -341,7 +252,7 @@ export default function Page() {
             <div className="mb-12 md:mb-16">
               <div
                 data-reveal
-                className="text-[11px] uppercase tracking-[0.35em] text-[#8f8f8f]"
+                className="type-section-label"
               >
                 COMPONENTI
               </div>
@@ -353,7 +264,7 @@ export default function Page() {
               </h2>
               <p
                 data-reveal
-                className="mt-5 max-w-2xl text-sm md:text-base leading-relaxed text-[#a3a3a3]"
+                className="type-body-lead mt-5 max-w-2xl text-[#a3a3a3]"
               >
                 Produciamo componenti e accessori con standard artigianali, adatti
                 a diverse configurazioni di fisarmoniche.
@@ -363,12 +274,13 @@ export default function Page() {
           <ComponentiSlider />
         </section>
 
+        {/* --- Lavorazioni: card da `lib/lavorazioni` (slug → `/lavorazioni/[slug]`) --- */}
         <section id="meesterwerken" className="py-24 md:py-32 bg-[#0a0a0a]">
           <div className="mx-auto max-w-6xl px-6 md:px-8">
             <div className="mb-12 md:mb-16">
               <div
                 data-reveal
-                className="text-[11px] uppercase tracking-[0.35em] text-[#8f8f8f]"
+                className="type-section-label"
               >
                 LAVORAZIONI IN EVIDENZA
               </div>
@@ -381,7 +293,7 @@ export default function Page() {
             </div>
 
             <div className="grid gap-10 md:grid-cols-3">
-              {lavorazioneCards.map((p, idx) => (
+              {HOME_LAVORAZIONE_CARDS.map((p, idx) => (
                 <Link
                   key={p.slug}
                   href={`/lavorazioni/${p.slug}`}
@@ -403,11 +315,11 @@ export default function Page() {
                       <h3 className="text-base md:text-lg uppercase tracking-[0.1em] text-dirty-white">
                         {p.title}
                       </h3>
-                      <p className="mt-3 text-sm leading-relaxed text-[#a3a3a3]">
+                      <p className="type-body-lead mt-3 text-[#a3a3a3]">
                         {p.line}
                       </p>
                       <div className="mt-6 flex items-center justify-between">
-                        <span className="text-[11px] uppercase tracking-[0.28em] text-[#8f8f8f]">
+                        <span className="type-meta-label">
                           Scopri dettagli
                         </span>
                         <span className="h-px w-8 bg-white/20 group-hover:w-12 group-hover:bg-brass transition-all duration-300" />
@@ -420,13 +332,14 @@ export default function Page() {
           </div>
         </section>
 
+        {/* --- Perché Sky Carini --- */}
         <section className="py-20 md:py-28 bg-[#050505]">
           <div className="mx-auto max-w-6xl px-6 md:px-8">
             <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] gap-14 items-start">
               <div>
                 <div
                   data-reveal
-                  className="text-[11px] uppercase tracking-[0.35em] text-[#8f8f8f]"
+                  className="type-section-label"
                 >
                   PERCHÉ SKY CARINI
                 </div>
@@ -438,7 +351,7 @@ export default function Page() {
                 </h2>
                 <ul
                   data-reveal
-                  className="mt-7 space-y-4 text-sm md:text-base text-[#b8b8b8] leading-relaxed"
+                  className="type-body-lead mt-7 space-y-4 text-[#b8b8b8]"
                 >
                   <li>• Precisione di lavorazione su ogni componente.</li>
                   <li>• Tolleranze curate e controlli qualità dedicati.</li>
@@ -463,6 +376,7 @@ export default function Page() {
           </div>
         </section>
 
+        {/* --- Galleria + lightbox (portal su `document.body`) --- */}
         <section
           id="galleria"
           className="py-24 md:py-32 bg-[#0a0a0a] border-y border-white/5"
@@ -472,7 +386,7 @@ export default function Page() {
               <div>
                 <div
                   data-reveal
-                  className="text-[11px] uppercase tracking-[0.35em] text-[#8f8f8f]"
+                  className="type-section-label"
                 >
                   GALLERIA LAVORAZIONI
                 </div>
@@ -485,7 +399,7 @@ export default function Page() {
               </div>
               <p
                 data-reveal
-                className="max-w-md text-sm leading-relaxed text-[#737373] md:text-right"
+                className="type-body-lead max-w-md text-[#737373] md:text-right"
               >
                 Selezioni dal banco: materiali, finiture e fasi intermedie del
                 ciclo produttivo.
@@ -495,7 +409,7 @@ export default function Page() {
 
           <div className="mx-auto max-w-6xl px-6 md:px-8">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-12 md:gap-5 md:auto-rows-[minmax(140px,auto)]">
-              {galleryItems.map((item, idx) => (
+              {GALLERY_ITEMS.map((item, idx) => (
                 <button
                   key={item.src}
                   type="button"
@@ -516,7 +430,7 @@ export default function Page() {
                   />
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent opacity-90 md:opacity-100" />
                   <div className="pointer-events-none absolute bottom-0 left-0 right-0 p-4 md:p-5">
-                    <span className="text-[10px] font-medium uppercase tracking-[0.35em] text-brass/90">
+                    <span className="type-gallery-index">
                       {String(idx + 1).padStart(2, "0")}
                     </span>
                     <div className="mt-1 h-px max-w-12 bg-brass/50 transition-all duration-500 group-hover:max-w-20 group-hover:bg-brass" />
@@ -527,6 +441,7 @@ export default function Page() {
           </div>
         </section>
 
+        {/* --- Contatto (form ancora solo UI, nessun invio backend) --- */}
         <section id="contatto" className="py-24 md:py-32 bg-[#050505]">
           <span
             id="contact"
@@ -538,7 +453,7 @@ export default function Page() {
               <div>
                 <div
                   data-reveal
-                  className="text-[11px] uppercase tracking-[0.35em] text-[#8f8f8f]"
+                  className="type-section-label"
                 >
                   CONTATTO
                 </div>
@@ -550,7 +465,7 @@ export default function Page() {
                 </h2>
                 <p
                   data-reveal
-                  className="mt-6 max-w-2xl text-sm md:text-base leading-relaxed text-[#a3a3a3]"
+                  className="type-body-lead mt-6 max-w-2xl text-[#a3a3a3]"
                 >
                   Ti rispondiamo con indicazioni su componenti, tempi e lavorazioni
                   in base alle specifiche del tuo progetto.
@@ -558,18 +473,18 @@ export default function Page() {
 
                 <div data-reveal className="mt-8 space-y-4">
                   <div className="flex cursor-default items-center justify-between rounded-sm border border-white/5 bg-black/10 px-6 py-4">
-                    <div className="text-[11px] uppercase tracking-[0.28em] text-[#8f8f8f]">
+                    <div className="type-meta-label">
                       Orari
                     </div>
-                    <div className="text-sm text-dirty-white">
+                    <div className="type-body-lead text-dirty-white">
                       Lun–Ven • 09:00–17:00
                     </div>
                   </div>
                   <div className="cursor-default rounded-sm border border-white/5 bg-black/10 px-6 py-4">
-                    <div className="text-[11px] uppercase tracking-[0.28em] text-[#8f8f8f]">
+                    <div className="type-meta-label">
                       Indirizzo
                     </div>
-                    <div className="mt-2 text-sm text-dirty-white leading-relaxed">
+                    <div className="type-body-lead mt-2 text-dirty-white">
                       Castelfidardo, Via Adriatica 51
                       <br />
                       60027 Osimo Stazione AN
@@ -589,38 +504,38 @@ export default function Page() {
                 >
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <label className="block">
-                      <span className="text-[11px] uppercase tracking-[0.28em] text-[#8f8f8f]">
+                      <span className="type-meta-label">
                         Nome
                       </span>
                       <input
-                        className="mt-2 w-full rounded-sm border border-white/10 bg-[#050505] px-4 py-3 text-sm text-dirty-white outline-none focus:border-brass/60"
+                        className="type-body-lead mt-2 w-full rounded-sm border border-white/10 bg-[#050505] px-4 py-3 text-dirty-white outline-none focus:border-brass/60"
                         placeholder="Il tuo nome"
                       />
                     </label>
                     <label className="block">
-                      <span className="text-[11px] uppercase tracking-[0.28em] text-[#8f8f8f]">
+                      <span className="type-meta-label">
                         Email
                       </span>
                       <input
                         type="email"
-                        className="mt-2 w-full rounded-sm border border-white/10 bg-[#050505] px-4 py-3 text-sm text-dirty-white outline-none focus:border-brass/60"
+                        className="type-body-lead mt-2 w-full rounded-sm border border-white/10 bg-[#050505] px-4 py-3 text-dirty-white outline-none focus:border-brass/60"
                         placeholder="nome@dominio.it"
                       />
                     </label>
                   </div>
                   <label className="block">
-                    <span className="text-[11px] uppercase tracking-[0.28em] text-[#8f8f8f]">
+                    <span className="type-meta-label">
                       Messaggio
                     </span>
                     <textarea
                       rows={4}
-                      className="mt-2 w-full resize-none rounded-sm border border-white/10 bg-[#050505] px-4 py-3 text-sm text-dirty-white outline-none focus:border-brass/60"
+                      className="type-body-lead mt-2 w-full resize-none rounded-sm border border-white/10 bg-[#050505] px-4 py-3 text-dirty-white outline-none focus:border-brass/60"
                       placeholder="Raccontaci la parte di cui hai bisogno (modello, quantità, finitura)..."
                     />
                   </label>
                   <button
                     type="submit"
-                    className="inline-flex w-full cursor-pointer items-center justify-center gap-3 rounded-sm bg-brass px-4 py-3 text-[11px] uppercase tracking-[0.2em] text-[#050505] hover:brightness-[1.02] transition-colors"
+                    className="type-button-label inline-flex w-full cursor-pointer items-center justify-center gap-3 rounded-sm bg-brass px-4 py-3 text-[#050505] hover:brightness-[1.02] transition-colors"
                   >
                     Richiedi un preventivo
                     <ArrowRight className="text-[#050505]" />
@@ -634,10 +549,10 @@ export default function Page() {
         <div className="border-t border-white/5 bg-zinc-section/30">
           <div className="mx-auto max-w-6xl px-6 md:px-8 py-10">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="text-[11px] uppercase tracking-[0.28em] text-[#737373]">
+              <div className="type-footer-muted">
                 SKY CARINI • PARTI PER FISARMONICHE
               </div>
-              <div className="text-[11px] uppercase tracking-[0.28em] text-[#737373]">
+              <div className="type-footer-muted">
                 © {new Date().getFullYear()} — Tutti i diritti riservati
               </div>
             </div>
@@ -645,117 +560,11 @@ export default function Page() {
         </div>
       </main>
 
-      {lightboxIndex !== null &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[200] overflow-y-auto bg-black/60 backdrop-blur-xl"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Immagine ingrandita"
-            onClick={closeLightbox}
-          >
-            <div className="flex min-h-full items-center justify-center px-4 py-20 sm:px-8 sm:py-24">
-              <div
-                className="relative w-full max-w-6xl border border-brass/35 bg-[#0a0a0a]/95 p-2 shadow-[0_0_100px_rgba(0,0,0,0.75)] sm:p-4"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  type="button"
-                  onClick={closeLightbox}
-                  className="absolute right-2 top-2 z-20 flex h-10 w-10 cursor-pointer items-center justify-center rounded-sm border border-white/10 bg-black/50 text-dirty-white transition-colors hover:border-brass/50 hover:text-brass sm:right-3 sm:top-3"
-                  aria-label="Chiudi"
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    aria-hidden="true"
-                  >
-                    <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-                  </svg>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setLightboxIndex((i) =>
-                      i === null
-                        ? null
-                        : (i + galleryItems.length - 1) % galleryItems.length
-                    );
-                  }}
-                  className="absolute left-1 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-sm border border-white/10 bg-black/50 text-dirty-white transition-colors hover:border-brass/50 hover:text-brass md:flex"
-                  aria-label="Immagine precedente"
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M14 6l-6 6 6 6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setLightboxIndex((i) =>
-                      i === null ? null : (i + 1) % galleryItems.length
-                    );
-                  }}
-                  className="absolute right-1 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-sm border border-white/10 bg-black/50 text-dirty-white transition-colors hover:border-brass/50 hover:text-brass md:flex md:right-14"
-                  aria-label="Immagine successiva"
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M10 6l6 6-6 6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
-
-                <div className="relative mx-auto mt-8 h-[min(78vh,760px)] w-full md:mt-0 md:px-12">
-                  <Image
-                    src={galleryItems[lightboxIndex].src}
-                    alt={`Lavorazione ${lightboxIndex + 1} — ingrandimento`}
-                    fill
-                    className="object-contain"
-                    sizes="100vw"
-                    priority
-                  />
-                </div>
-
-                <p className="mt-4 text-center text-[11px] uppercase tracking-[0.32em] text-brass/90">
-                  {String(lightboxIndex + 1).padStart(2, "0")}
-                  <span className="mx-2 text-white/25">/</span>
-                  {String(galleryItems.length).padStart(2, "0")}
-                </p>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+      <ImageLightbox
+        images={GALLERY_LIGHTBOX_IMAGES}
+        activeIndex={lightboxIndex}
+        onActiveIndexChange={setLightboxIndex}
+      />
     </div>
   );
 }

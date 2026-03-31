@@ -3,44 +3,24 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useMemo, useRef } from "react";
+import { useRef } from "react";
 import { assetUrl } from "@/lib/asset-prefix";
+import { scrollToAnchorById } from "@/lib/scroll-to-section";
 
+/** Sezione header: anchor verso home (`#collectie`, …); su altre pagine `Link` a `/#id`. */
 const navLinks = [
   { id: "collectie", label: "COLLEZIONE" },
   { id: "meesterwerken", label: "OPERE" },
   { id: "contatto", label: "CONTATTO" },
 ] as const;
 
+const LOGO_SRC = assetUrl("/logo-sky-carini.png");
+
 export function SiteHeader() {
   const pathname = usePathname();
   const navRef = useRef<HTMLElement | null>(null);
-  const navHeight = 72;
 
   const isHome = pathname === "/" || pathname === "";
-
-  const scrollToId = useCallback(
-    (id: string) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-
-      const navEl = navRef.current;
-      const offset = navEl
-        ? navEl.getBoundingClientRect().height + 12
-        : navHeight + 12;
-      const y = el.getBoundingClientRect().top + window.scrollY - offset;
-
-      if (window.lenis?.scrollTo) {
-        window.lenis.scrollTo(y);
-        return;
-      }
-
-      window.scrollTo({ top: y, behavior: "smooth" });
-    },
-    []
-  );
-
-  const logoSrc = useMemo(() => assetUrl("/logo-sky-carini.png"), []);
 
   return (
     <header
@@ -54,15 +34,13 @@ export function SiteHeader() {
         >
           <div className="h-15 w-15 rounded-[2px]" aria-hidden="true">
             <Image
-              src={logoSrc}
+              src={LOGO_SRC}
               alt="Sky Carini"
               width={60}
               height={60}
             />
           </div>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.2em]">
-            SKY CARINI
-          </div>
+          <div className="type-brand-mark">SKY CARINI</div>
         </Link>
 
         <nav aria-label="Navigazione principale">
@@ -74,9 +52,9 @@ export function SiteHeader() {
                   href={`#${l.id}`}
                   onClick={(e) => {
                     e.preventDefault();
-                    scrollToId(l.id);
+                    scrollToAnchorById(l.id, { headerRoot: navRef.current });
                   }}
-                  className="group relative text-[11px] uppercase tracking-[0.28em] text-[#a3a3a3] hover:text-dirty-white transition-colors cursor-pointer"
+                  className="type-nav-link group relative text-[#a3a3a3] hover:text-dirty-white transition-colors cursor-pointer"
                 >
                   <span className="block">{l.label}</span>
                   <span className="pointer-events-none absolute -bottom-1 left-0 h-px w-0 bg-brass transition-[width] duration-300 group-hover:w-full" />
@@ -85,7 +63,7 @@ export function SiteHeader() {
                 <Link
                   key={l.id}
                   href={`/#${l.id}`}
-                  className="group relative text-[11px] uppercase tracking-[0.28em] text-[#a3a3a3] hover:text-dirty-white transition-colors cursor-pointer"
+                  className="type-nav-link group relative text-[#a3a3a3] hover:text-dirty-white transition-colors cursor-pointer"
                 >
                   <span className="block">{l.label}</span>
                   <span className="pointer-events-none absolute -bottom-1 left-0 h-px w-0 bg-brass transition-[width] duration-300 group-hover:w-full" />

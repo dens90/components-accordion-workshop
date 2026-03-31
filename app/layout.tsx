@@ -15,6 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  /* Pre-lancio: no indicizzazione (rimuovi o imposta index:true a go-live). */
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: { index: false, follow: false },
+  },
+
   title: {
     default: "Sky Carini — Parti per fisarmoniche",
     template: "%s | Sky Carini",

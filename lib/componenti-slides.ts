@@ -1,3 +1,4 @@
+/** Dati slider home: titoli + immagini gallery 01–06 (`public/images/gallery-*.jpg`). */
 import { assetUrl } from "./asset-prefix";
 
 export type ComponenteSlide = {
@@ -6,7 +7,6 @@ export type ComponenteSlide = {
   image: string;
 };
 
-/** Placeholder macro: maps to existing gallery assets (01–06). */
 export function getComponentiSlides(): ComponenteSlide[] {
   const titles = [
     "TASTI & GUIDE",
