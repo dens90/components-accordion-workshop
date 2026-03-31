@@ -27,24 +27,28 @@ export function SiteHeader() {
       ref={navRef}
       className="fixed top-0 left-0 w-full z-50 bg-black/60 backdrop-blur border-b border-white/5"
     >
-      <div className="mx-auto max-w-6xl px-6 py-3 md:py-4 flex items-center justify-between">
+      <div className="mx-auto max-w-6xl px-3 min-[400px]:px-4 sm:px-6 py-2.5 sm:py-3 md:py-4 flex items-center justify-between gap-2">
         <Link
           href="/"
-          className="flex items-center gap-3 cursor-pointer"
+          className="flex min-w-0 shrink items-center gap-2 sm:gap-3 cursor-pointer"
         >
-          <div className="h-15 w-15 rounded-[2px]" aria-hidden="true">
+          <div
+            className="relative size-10 shrink-0 sm:size-[52px] md:size-[60px] rounded-[2px]"
+            aria-hidden="true"
+          >
             <Image
               src={LOGO_SRC}
               alt="Sky Carini"
-              width={60}
-              height={60}
+              fill
+              className="object-contain"
+              sizes="60px"
             />
           </div>
-          <div className="type-brand-mark">SKY CARINI</div>
+          <div className="type-brand-mark whitespace-nowrap">SKY CARINI</div>
         </Link>
 
-        <nav aria-label="Navigazione principale">
-          <div className="flex items-center gap-8">
+        <nav aria-label="Navigazione principale" className="shrink-0">
+          <div className="flex items-center gap-2 min-[400px]:gap-3 sm:gap-5 md:gap-8">
             {navLinks.map((l) =>
               isHome ? (
                 <a
@@ -54,7 +58,7 @@ export function SiteHeader() {
                     e.preventDefault();
                     scrollToAnchorById(l.id, { headerRoot: navRef.current });
                   }}
-                  className="type-nav-link group relative text-[#a3a3a3] hover:text-dirty-white transition-colors cursor-pointer"
+                  className="type-nav-link group relative whitespace-nowrap text-[#a3a3a3] hover:text-dirty-white transition-colors cursor-pointer"
                 >
                   <span className="block">{l.label}</span>
                   <span className="pointer-events-none absolute -bottom-1 left-0 h-px w-0 bg-brass transition-[width] duration-300 group-hover:w-full" />
@@ -63,7 +67,7 @@ export function SiteHeader() {
                 <Link
                   key={l.id}
                   href={`/#${l.id}`}
-                  className="type-nav-link group relative text-[#a3a3a3] hover:text-dirty-white transition-colors cursor-pointer"
+                  className="type-nav-link group relative whitespace-nowrap text-[#a3a3a3] hover:text-dirty-white transition-colors cursor-pointer"
                 >
                   <span className="block">{l.label}</span>
                   <span className="pointer-events-none absolute -bottom-1 left-0 h-px w-0 bg-brass transition-[width] duration-300 group-hover:w-full" />
